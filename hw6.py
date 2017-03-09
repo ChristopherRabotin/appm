@@ -1,9 +1,12 @@
 import numpy as np
 from numpy import log, exp
+from numpy.random import randn
+import matplotlib.pyplot as plt
 
-from gradient import sigm, descend
+from gradient import sigm, descend, check
 
 if __name__ == '__main__':
+    plt.switch_backend('Qt4Agg')
     # load the data file
     f = open('data/hw6/spambase.data')
     X = []
@@ -15,8 +18,7 @@ if __name__ == '__main__':
             ldt[-1] = -1
         y.append(ldt[-1])
         # Normalize the data.
-        ldt[:-1] = [log(xij + 0.1) for xij in ldt[:-1]]
-        X.append(ldt[:-1])
+        X.append([log(xij + 0.1) for xij in ldt[:-1]])
     #endfor
     # Transform X and Y to np.arrays
     X = np.array(X)
@@ -30,5 +32,9 @@ if __name__ == '__main__':
         nablal = lambda w: -sum([sigm(-y[i]*np.dot(w.transpose(), Xtrain[i]))*np.dot(y[i], Xtrain[i]) for i in range(train_size)])
         return l(x), nablal(x)
 
-    out = descend(fNgTrain, np.ones(57))
-    print(out)
+    hList, errors = check(fNgTrain, randn(57))
+    print(hList)
+    # Show the log-log plot
+    plt.loglog(hList, errors, basex=2)
+    plt.legend('forward diff','central diff','O(h) sanity check','O(h^2)','O(h^3)','location','northwest?')
+    plt.show()

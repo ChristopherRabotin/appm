@@ -18,16 +18,16 @@ def check(funcNgrad, x0, scaling=1, num_points=8, verbose=True):
     eps = np.finfo(1.0).eps
     n = x0.size
     f0, g0 = funcNgrad(x0)
-    hfinal  = log10(scaling*eps)/2+1
+    hfinal = log10(scaling*eps)/2+1
     hList = logspace(7+hfinal, hfinal, num_points)
     if verbose:
         print('h\t\tForward diff\tCentral diff\t1st order Taylor\t2nd order Taylor\t3rd order Taylor')
     errors = []
 
     for h in hList:
-        g = zeros((n, 1))
-        e = zeros((n, 1))
-        gc = zeros((n, 1))
+        g = zeros(n)
+        e = zeros(n)
+        gc = zeros(n)
         for i in range(n):
             e[i] = 1 # Used to ignore everything in the multiplication but the current i
             f1 = funcNgrad(x0 + h*e)[0]
@@ -55,6 +55,7 @@ def check(funcNgrad, x0, scaling=1, num_points=8, verbose=True):
             print('%.1e\t\t%.1e\t\t%.1e\t\t%.1e\t\t\t%.1e\t\t\t%.1e' % (h, er_fd, er_cd, Taylor1, Taylor2, err3 ))
 
         errors.append([er_fd, er_cd, Taylor1, Taylor2, err3])
+    return hList, errors
 
 def descend(funcNgrad, x, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxIterations=1e4, tol=1e-6, tolX=1e-6, verbose=True):
     '''
@@ -116,6 +117,7 @@ if __name__ == '__main__':
         g = lambda x: 2*x
         return f(x), g(x)
 
-    check(fNg, np.array([5]))
+    errors = check(fNg, np.array([5]))
+    print(errors[-1])
     x = descend(fNg, np.array([5]))
     print('x={}'.format(x))
