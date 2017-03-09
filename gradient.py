@@ -1,3 +1,4 @@
+import numpy as np
 from numpy import exp, logspace, log10, zeros, sqrt, dot
 from numpy.linalg import norm
 from numpy.random import randn
@@ -5,7 +6,7 @@ from numpy.random import randn
 def sigm(x):
     return 1 / (1+exp(-x))
 
-def check(funcNgrad, x0, scaling=1, num_points=8, verbose=False):
+def check(funcNgrad, x0, scaling=1, num_points=8, verbose=True):
     '''
     Mostly a conversion from https://github.com/stephenbeckr/convex-optimization-class/blob/master/HW6/gradientCheck.m.
     @parameter funcNgrad: a function handler which returns both the function and its first order gradient
@@ -19,9 +20,7 @@ def check(funcNgrad, x0, scaling=1, num_points=8, verbose=False):
     hfinal  = log10(scaling)/2+1
     hList = logspace(7+hfinal, hfinal, num_points)
     if verbose:
-        print('{}'.format(''.join(['-' for _ in range(50)])))
-        print('h\t\tForward diff\tCentral diff\t1st order Taylor\t2nd order Taylor\t3rd order Taylor\n')
-        print('{}'.format(''.join(['-' for _ in range(50)])))
+        print('h\t\tForward diff\tCentral diff\t1st order Taylor\t2nd order Taylor\t3rd order Taylor')
     errors = []
 
     for h in hList:
@@ -52,7 +51,7 @@ def check(funcNgrad, x0, scaling=1, num_points=8, verbose=False):
         err3 /= nReps
 
         if verbose:
-            print('%.1e\t\t%.1e\t\t%.1e\t\t%.1e\t\t\t%.1e\t\t\t%.1e'.format(h, er_fd, er_cd, Taylor1, Taylor2, err3 ))
+            print('%.1e\t\t%.1e\t\t%.1e\t\t%.1e\t\t\t%.1e\t\t\t%.1e' % (h, er_fd, er_cd, Taylor1, Taylor2, err3 ))
 
         errors.append([er_fd, er_cd, Taylor1, Taylor2, err3])
 
@@ -72,7 +71,7 @@ def descend(funcNgrad, value, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxI
     objConverged = False
     varConverged = False
     lnsCnt = 0
-    for dit in range(maxIterations):
+    for dit in range(int(maxIterations)):
         fVal, gVal = funcNgrad(value)
         if linesearch:
             if dit > 0:
@@ -80,7 +79,7 @@ def descend(funcNgrad, value, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxI
             #endif
             # Search for a better value
             lnsCnt = 0
-            while  funcNgrad(value - t*gVal)[0] > fVal - t*c*norm(g)**2:
+            while  funcNgrad(value - t*gVal)[0] > fVal - t*c*norm(gVal)**2:
                 lnsCnt += 1
                 t *= rho
             #endwhile
@@ -94,8 +93,9 @@ def descend(funcNgrad, value, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxI
             break
         #endif
         if verbose:
-            print('[%4d] f=%.2e\t|g|=%.2e\tlinesearch steps: %2d' % (dit, fVal, norm(gVal), lnsCnt))
+            print('[%4d] f=%.2e\t|g|=%.2e\tlinesearch steps: %2d' % (dit, fVal, norm(gVal), lnsCnt), flush=True)
         #endif
+        value = t*gVal
     #endfor
     if objConverged:
         print("Convergence in objective")
@@ -104,3 +104,12 @@ def descend(funcNgrad, value, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxI
     else:
         print("WARNING: No convergence")
     #endif
+    return value
+
+if __name__ == '__main__':
+    def fNg(x):
+        f = lambda x: x**2
+        g = lambda x: 2*x
+        return f(x), g(x)
+
+    check(fNg, np.array([5]))
