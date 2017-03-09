@@ -56,7 +56,7 @@ def check(funcNgrad, x0, scaling=1, num_points=8, verbose=True):
 
         errors.append([er_fd, er_cd, Taylor1, Taylor2, err3])
 
-def descend(funcNgrad, x, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxIterations=10, tol=1e-6, tolX=1e-6, verbose=True):
+def descend(funcNgrad, x, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxIterations=1e4, tol=1e-6, tolX=1e-6, verbose=True):
     '''
     Mostly a conversion from https://github.com/stephenbeckr/convex-optimization-class/blob/master/HW6/gradientDescent.m.
     @parameter funcNgrad: a function handler which returns both the function and its first order gradient
@@ -85,10 +85,9 @@ def descend(funcNgrad, x, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxItera
                 t *= rho
             #endwhile
         #endif
-        x_new = x - t*g
-        dx = norm(x_new - x)/norm(x)
+        dx = norm(-t*g)/norm(x)
         df = abs(f - float('inf'))/abs(f)
-        x = x_new
+        x = x - t*g
 
         if dit > 0 and df < tol:
             objConverged = True
@@ -118,4 +117,5 @@ if __name__ == '__main__':
         return f(x), g(x)
 
     check(fNg, np.array([5]))
-    descend(fNg, np.array([5]))
+    x = descend(fNg, np.array([5]))
+    print('x={}'.format(x))
