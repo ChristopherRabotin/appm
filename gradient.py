@@ -102,11 +102,11 @@ def descend(funcNgrad, x, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxItera
         #endif
     #endfor
     if objConverged:
-        print("Convergence in objective")
+        print("[OK] Convergence in objective")
     elif varConverged:
-        print("Convergence in variable")
+        print("[OK] Convergence in variable")
     else:
-        print("WARNING: No convergence")
+        print("[NOK] No convergence")
     #endif
     return x
 
