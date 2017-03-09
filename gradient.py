@@ -15,9 +15,10 @@ def check(funcNgrad, x0, scaling=1, num_points=8, verbose=True):
     @parameter num_points: number of points to use for values of h
     @return: an array of the list of values of h and the errors.
     '''
+    eps = np.finfo(1.0).eps
     n = x0.size
     f0, g0 = funcNgrad(x0)
-    hfinal  = log10(scaling)/2+1
+    hfinal  = log10(scaling*eps)/2+1
     hList = logspace(7+hfinal, hfinal, num_points)
     if verbose:
         print('h\t\tForward diff\tCentral diff\t1st order Taylor\t2nd order Taylor\t3rd order Taylor')
