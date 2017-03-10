@@ -57,12 +57,13 @@ def check(funcNgrad, x0, scaling=1, num_points=8, verbose=True):
         errors.append([er_fd, er_cd, Taylor1, Taylor2, err3])
     return hList, errors
 
-def descend(funcNgrad, x, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxIterations=1e4, tol=1e-6, tolX=1e-6, verbose=True):
+def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=0.9, maxIterations=1e3, tol=1e-3, tolX=1e-6, verbose=True):
     '''
     Mostly a conversion from https://github.com/stephenbeckr/convex-optimization-class/blob/master/HW6/gradientDescent.m.
     @parameter funcNgrad: a function handler which returns both the function and its first order gradient
     @parameter x: the value at which to evaluate funcNgrad (will be called as `funcNgrad(value)`)
     @parameter linesearch: set to True to perform a back tracking linesearch
+    @parameter heavy: set to True to perform a heavy ball accelerated Nesterov method
     @parameter c: backtracking parameter for the gradient
     @parameter rho: backtracking parameter for t
     @parameter maxIterations: maximum number of iterations before giving up
@@ -73,6 +74,9 @@ def descend(funcNgrad, x, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxItera
     objConverged = False
     varConverged = False
     lnsCnt = 0
+    x_values = [x]
+    f0_values = []
+    g0_values = []
     for dit in range(int(maxIterations)):
         f, g = funcNgrad(x)
         if linesearch:
@@ -86,9 +90,17 @@ def descend(funcNgrad, x, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxItera
                 t *= rho
             #endwhile
         #endif
-        dx = norm(-t*g)/norm(x)
+        x_new = x - t*g
+        if heavy and dit > 0:
+            x_new += ((dit)/(dit+3))*(x - x_values[dit-1])
+
+        dx = norm(x_new-x)/norm(x)
         df = abs(f - float('inf'))/abs(f)
-        x = x - t*g
+        x = x_new
+        x_values.append(x)
+        newf, newg = funcNgrad(x)
+        f0_values.append(newf)
+        g0_values.append(newg)
 
         if dit > 0 and df < tol:
             objConverged = True
@@ -98,7 +110,8 @@ def descend(funcNgrad, x, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxItera
             varConverged = True
             break
         #endif
-        if verbose:
+        if verbose or dit % 100 == 0:
+            # If not verbose, still print every so often.
             print('[%4d] f=%.2e\t|g|=%.2e\tlinesearch steps: %2d' % (dit, f, norm(g), lnsCnt), flush=True)
         #endif
     #endfor
@@ -109,7 +122,7 @@ def descend(funcNgrad, x, linesearch=True, stepsize=1, c=1e-4, rho=0.9, maxItera
     else:
         print("[NOK] No convergence")
     #endif
-    return x
+    return x_values, f0_values, g0_values
 
 if __name__ == '__main__':
     def fNg(x):
@@ -119,5 +132,5 @@ if __name__ == '__main__':
 
     errors = check(fNg, np.array([5]))
     print(errors[-1])
-    x = descend(fNg, np.array([5]))
-    print('x={}'.format(x))
+    x_values = descend(fNg, np.array([5]))[0]
+    print('x={}'.format(x_values[-1]))
