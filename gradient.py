@@ -59,7 +59,10 @@ def check(funcNgrad, x0, scaling=1, num_points=8, verbose=True):
         errors.append([er_fd, er_cd, Taylor1, Taylor2, err3])
     return hList, errors
 
-def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=0.9, maxIterations=1e3, tol=1e-3, tolX=1e-6, verbose=True):
+def defaultprox(x, t, g):
+    return x - t*g
+
+def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=0.9, maxIterations=1e3, tol=1e-3, tolX=1e-6, prox=defaultprox, verbose=True):
     '''
     Mostly a conversion from https://github.com/stephenbeckr/convex-optimization-class/blob/master/HW6/gradientDescent.m.
     @parameter funcNgrad: a function handler which returns both the function and its first order gradient
@@ -93,7 +96,7 @@ def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=
                 t *= rho
             #endwhile
         #endif
-        x_new = x - t*g
+        x_new = defaultprox(x, t, g)
         if heavy and dit > 0:
             if __as_per_lecture__:
                 y = x_new + ((dit)/(dit+3))*(x - x_values[dit-1])

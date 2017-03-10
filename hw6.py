@@ -7,24 +7,49 @@ from gradient import sigm, descend, check
 
 perform_check = False
 use_scipy = True
+pb_num = 1
 
 if use_scipy:
     from scipy.optimize import fmin
 
-def classify(w, X, y, threshold=0.5):
+fmin_x, fmin_values = [], []
+
+def fmin_callback(*args, **kwargs):
+    x = args[0]
+    fmin_x.append(x)
+    fmin_values.append(fNgTrain(x)[0])
+
+def sign(x):
+    if x < 0:
+        return -1
+    return 1
+
+def classify0(w, X, y, threshold=0.5):
     '''
     @returns: classification rate.
     '''
     num_fail = 0
     for i, email in enumerate(X):
-        prediction = 1 if sigm(w.transpose().dot(email)) > threshold else -1
+        prediction = 1 if sigm(np.inner(w, email)) > threshold else -1
         if prediction != y[i]:
             num_fail += 1
 
     return float(num_fail)/len(X)
 
+def classify(w, X, y, threshold=0.5):
+    '''
+    @returns: classification rate.
+    '''
+    y_prediction = []
+    for i, email in enumerate(X):
+        y_prediction.append(1 if sigm(np.inner(w, email)) > threshold else -1)
+
+    y_prediction = np.array(y_prediction)
+    return sum(y*y_prediction)/(2*len(X)) + 0.5
+
 if __name__ == '__main__':
-    plt.switch_backend('Qt4Agg')
+    #plt.switch_backend('Qt4Agg')
+    plt.switch_backend('agg')
     # load the data file
     f = open('data/hw6/spambase.data')
     X = []
@@ -45,15 +70,18 @@ if __name__ == '__main__':
     train_size = 3065
     Xtrain = X[:train_size]
     y = np.array(y)
-    def fNgTrain(x):
-        l = lambda w: sum([log(1 + exp(-y[i]*np.dot(w.transpose(), Xtrain[i]))) for i in range(train_size)])
-        nablal = lambda w: -sum([sigm(-y[i]*np.dot(w.transpose(), Xtrain[i]))*np.dot(y[i], Xtrain[i]) for i in range(train_size)])
+
+    def fNgGeneric(x, Xset):
+        rgn = len(Xset)
+        l = lambda w: sum([log(1 + exp(-y[i]*np.dot(w.transpose(), Xset[i]))) for i in range(rgn)])
+        nablal = lambda w: -sum([sigm(-y[i]*np.dot(w.transpose(), Xset[i]))*np.dot(y[i], Xset[i]) for i in range(rgn)])
         return l(x), nablal(x)
 
+    def fNgTrain(x):
+        return fNgGeneric(x, Xtrain)
+
     def fNgFull(x):
-        l = lambda w: sum([log(1 + exp(-y[i]*np.dot(w.transpose(), X[i]))) for i in range(len(X))])
-        nablal = lambda w: -sum([sigm(-y[i]*np.dot(w.transpose(), X[i]))*np.dot(y[i], X[i]) for i in range(len(X))])
-        return l(x), nablal(x)
+        return fNgGeneric(x, X)
 
     x0 = randn(57)
     if perform_check:
@@ -68,8 +96,9 @@ if __name__ == '__main__':
     L = (np.linalg.norm(X)**2)/4
     x0 = np.zeros(57)
     maxIts = 5e3
-    tol = 1e-3
-    tolX = 1e-3
+    tol = 1e-1
+    tolX = 1e-1
+
     print('[INFO] Starting fixed step gradient descent')
     fixd_x, fixd_f0_values, fixd_g0_values = descend(fNgTrain, x0, linesearch=False, heavy=False, stepsize=1/L, maxIterations=maxIts, verbose=False, tol=tol, tolX=tolX)
     fsp = plt.semilogy(fixd_f0_values, range(len(fixd_f0_values)), label='fixed step')[0]
@@ -87,22 +116,19 @@ if __name__ == '__main__':
     nep2 = plt.semilogy(nes2_f0_values, range(len(nes2_f0_values)), label='Nesterov fixed')[0]
 
 
-    if use_scipy:
-        # Scipy fmin
-        def sfunc(x):
-            return fNgTrain(x)[0]
-        allvecs = fmin(sfunc, x0, xtol=tolX, ftol=tol, maxiter=maxIts)[-1]
-        fm_x, fm_f0_values = [], []
-        for sol in allvecs:
-            fm_x.append(sol[0])
-            fm_f0_values.append(sol[1])
+    print('[INFO] Starting scipy\'s fmin')
+    # Scipy fmin
+    def sfunc(x):
+        return fNgTrain(x)[0]
+    fmin(sfunc, x0, xtol=tolX, ftol=tol, maxiter=maxIts, full_output=True, callback=fmin_callback)
+    fmp = plt.semilogy(fmin_values, range(len(fmin_values)),label='Scipy fmin')[0]
 
-        fmp = plt.semilogy(fm_f0_values, range(len(fm_f0_values)),label='Scipy fmin')[0]
-
-    for name, val in [['GRADDESCENT', fixd_x[-1]], ['LINESEARCH', lns_x[-1]], ['NESTEROV', nes_x[-1]], ['NESTEROV 2', nes2_x[-1]]]:
+    for name, val in [['GRADDESCENT', fixd_x[-1]], ['LINESEARCH', lns_x[-1]], ['NESTEROV', nes_x[-1]], ['NESTEROV 2', nes2_x[-1]], ['FMIN', fmin_x[-1]]]:
         print('[{}] Classification on training data: {}'.format(name, classify(val, X[:train_size], y[:train_size])))
         print('[{}] Classification on remaining data: {}'.format(name, classify(val, X[train_size:], y[train_size:])))
 
     plt.grid(True)
-    plt.legend(handles=[lsp, fsp, nep, nep2], loc='upper right')
+    plt.legend(handles=[lsp, fsp, nep, nep2, fmp], loc='upper right')
     plt.show()
+    plt.draw()
+    plt.savefig('hw6.png')
