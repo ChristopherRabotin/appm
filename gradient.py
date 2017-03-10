@@ -3,6 +3,8 @@ from numpy import exp, logspace, log10, zeros, sqrt, dot
 from numpy.linalg import norm
 from numpy.random import randn
 
+__as_per_lecture__ = False
+
 def sigm(x):
     return 1 / (1+exp(-x))
 
@@ -77,6 +79,7 @@ def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=
     x_values = [x]
     f0_values = []
     g0_values = []
+    y_values = []
     for dit in range(int(maxIterations)):
         f, g = funcNgrad(x)
         if linesearch:
@@ -92,7 +95,13 @@ def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=
         #endif
         x_new = x - t*g
         if heavy and dit > 0:
-            x_new += ((dit)/(dit+3))*(x - x_values[dit-1])
+            if __as_per_lecture__:
+                y = x_new + ((dit)/(dit+3))*(x - x_values[dit-1])
+                y_values.append(y)
+                if dit > 1:
+                    x_new += y_values[dit-1]
+            else:
+                x_new += ((dit)/(dit+3))*(x - x_values[dit-1])
 
         dx = norm(x_new-x)/norm(x)
         df = abs(f - float('inf'))/abs(f)
