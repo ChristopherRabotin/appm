@@ -96,13 +96,15 @@ def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=
                 t *= rho
             #endwhile
         #endif
-        x_new = defaultprox(x, t, g)
+        x_new = prox(x, t, g)
         if heavy and dit > 0:
             if __as_per_lecture__:
-                y = x_new + ((dit)/(dit+3))*(x - x_values[dit-1])
+                if dit > 1:
+                    x_new = y_values[-1] - t*g
+                y = x_new + ((dit)/(dit+3))*(x_new - x)
                 y_values.append(y)
                 if dit > 1:
-                    x_new += y_values[dit-1]
+                    x_new += y_values[-1]
             else:
                 x_new += ((dit)/(dit+3))*(x - x_values[dit-1])
 

@@ -7,7 +7,7 @@ from gradient import sigm, descend, check
 
 perform_check = False
 use_scipy = True
-use_matfile = False
+use_matfile = True
 
 from scipy.io import loadmat
 
@@ -126,25 +126,25 @@ if __name__ == '__main__':
     # Plot f0 values
     L = (np.linalg.norm(X)**2)/4
     x0 = np.zeros(57)
-    maxIts = 5e3
-    tol = 1e-1
-    tolX = 1e-1
+    maxIts = 2e3
+    tol = 1e-3
+    tolX = 1e-3
 
-    #print('[INFO] Starting fixed step gradient descent')
-    #fixd_x, fixd_f0_values, fixd_g0_values = descend(fNgTrain, x0, linesearch=False, heavy=False, stepsize=1/L, maxIterations=maxIts, verbose=False, tol=tol, tolX=tolX)
-    #fsp = plt.semilogy(fixd_f0_values, range(len(fixd_f0_values)), label='fixed step')[0]
+    print('[INFO] Starting fixed step gradient descent')
+    fixd_x, fixd_f0_values, fixd_g0_values = descend(fNgTrain, x0, linesearch=False, heavy=False, stepsize=1/L, maxIterations=maxIts, verbose=False, tol=tol, tolX=tolX)
+    fsp = plt.semilogy(fixd_f0_values, range(len(fixd_f0_values)), label='fixed step')[0]
 
-    #print('[INFO] Starting line search gradient descent')
-    #lns_x, lns_f0_values, lns_g0_values = descend(fNgTrain, x0, linesearch=True, maxIterations=maxIts,verbose=False, tol=tol, tolX=tolX)
-    #lsp = plt.semilogy(lns_f0_values, range(len(lns_f0_values)),label='linesearch')[0]
+    print('[INFO] Starting line search gradient descent')
+    lns_x, lns_f0_values, lns_g0_values = descend(fNgTrain, x0, linesearch=True, maxIterations=maxIts,verbose=False, tol=tol, tolX=tolX)
+    lsp = plt.semilogy(lns_f0_values, range(len(lns_f0_values)),label='linesearch')[0]
 
-    #print('[INFO] Starting line search Nesterov (heavy ball)')
-    #nes_x, nes_f0_values, nes_g0_values = descend(fNgTrain, x0, linesearch=True, heavy=True, maxIterations=maxIts,verbose=False, tol=tol, tolX=tolX)
-    #nep = plt.semilogy(nes_f0_values, range(len(nes_f0_values)),label='Nesterov')[0]
+    print('[INFO] Starting line search Nesterov (heavy ball)')
+    nes_x, nes_f0_values, nes_g0_values = descend(fNgTrain, x0, linesearch=True, heavy=True, maxIterations=maxIts,verbose=False, tol=tol, tolX=tolX)
+    nep = plt.semilogy(nes_f0_values, range(len(nes_f0_values)),label='Nesterov')[0]
 
-    #print('[INFO] Starting fixed step Nesterov (heavy ball)')
-    #nes2_x, nes2_f0_values, nes2_g0_values = descend(fNgTrain, x0, linesearch=False, heavy=True, stepsize=1/L, maxIterations=maxIts, verbose=False, tol=tol, tolX=tolX)
-    #nep2 = plt.semilogy(nes2_f0_values, range(len(nes2_f0_values)), label='Nesterov fixed')[0]
+    print('[INFO] Starting fixed step Nesterov (heavy ball)')
+    nes2_x, nes2_f0_values, nes2_g0_values = descend(fNgTrain, x0, linesearch=False, heavy=True, stepsize=1/L, maxIterations=maxIts, verbose=False, tol=tol, tolX=tolX)
+    nep2 = plt.semilogy(nes2_f0_values, range(len(nes2_f0_values)), label='Nesterov fixed')[0]
 
 
     print('[INFO] Starting scipy\'s fmin')
@@ -154,13 +154,12 @@ if __name__ == '__main__':
     fmin(sfunc, x0, xtol=tolX, ftol=tol, maxiter=maxIts, full_output=True, callback=fmin_callback)
     fmp = plt.semilogy(fmin_values, range(len(fmin_values)),label='Scipy fmin')[0]
 
-    #for name, val in [['GRADDESCENT', fixd_x[-1]], ['LINESEARCH', lns_x[-1]], ['NESTEROV', nes_x[-1]], ['NESTEROV 2', nes2_x[-1]], ['FMIN', fmin_x[-1]]]:
-    for name, val in [['FMIN', fmin_x[-1]]]:
+    for name, val in [['GRADDESCENT', fixd_x[-1]], ['LINESEARCH', lns_x[-1]], ['NESTEROV', nes_x[-1]], ['NESTEROV 2', nes2_x[-1]], ['FMIN', fmin_x[-1]]]:
         print('[{}] Classification on training data: {}'.format(name, classify(val, X_train, y_train)))
         print('[{}] Classification on remaining data: {}'.format(name, classify(val, X_test, y_test)))
 
     plt.grid(True)
-    #plt.legend(handles=[lsp, fsp, nep, nep2, fmp], loc='upper right')
+    #plt.legend(handles=[lsp, nep, fmp], loc='upper right')
     plt.show()
     plt.draw()
     plt.savefig('hw6.png')
