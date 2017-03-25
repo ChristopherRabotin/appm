@@ -3,8 +3,6 @@ from numpy import exp, logspace, log10, zeros, sqrt, dot
 from numpy.linalg import norm
 from numpy.random import randn
 
-__as_per_lecture__ = False
-
 def sigm(x):
     return 1 / (1+exp(-x))
 
@@ -59,10 +57,10 @@ def check(funcNgrad, x0, scaling=1, num_points=8, verbose=True):
         errors.append([er_fd, er_cd, Taylor1, Taylor2, err3])
     return hList, errors
 
-def defaultprox(x, t, g):
-    return x - t*g
+def defaultprox_g(y):
+    return y
 
-def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=0.9, maxIterations=1e3, tol=1e-3, tolX=1e-6, prox=defaultprox, verbose=True):
+def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=0.9, maxIterations=1e3, tol=1e-3, tolX=1e-6, prox_g=defaultprox_g, verbose=True):
     '''
     Mostly a conversion from https://github.com/stephenbeckr/convex-optimization-class/blob/master/HW6/gradientDescent.m.
     @parameter funcNgrad: a function handler which returns both the function and its first order gradient
@@ -79,10 +77,9 @@ def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=
     objConverged = False
     varConverged = False
     lnsCnt = 0
-    x_values = [x]
+    y = x
     f0_values = []
     g0_values = []
-    y_values = []
     for dit in range(int(maxIterations)):
         f, g = funcNgrad(x)
         if linesearch:
@@ -96,22 +93,15 @@ def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=
                 t *= rho
             #endwhile
         #endif
-        x_new = prox(x, t, g)
-        if heavy and dit > 0:
-            if __as_per_lecture__:
-                if dit > 1:
-                    x_new = y_values[-1] - t*g
-                y = x_new + ((dit)/(dit+3))*(x_new - x)
-                y_values.append(y)
-                if dit > 1:
-                    x_new += y_values[-1]
-            else:
-                x_new += ((dit)/(dit+3))*(x - x_values[dit-1])
+        x_new = prox_g(x - t*g)
+        if heavy:
+            x_new = prox_g(y - t*g)
+            y_new = x_new + ((dit)/(dit+3))*(x_new - x)
+            y = y_new
 
         dx = norm(x_new-x)/norm(x)
         df = abs(f - float('inf'))/abs(f)
         x = x_new
-        x_values.append(x)
         newf, newg = funcNgrad(x)
         f0_values.append(newf)
         g0_values.append(newg)
@@ -124,7 +114,7 @@ def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=
             varConverged = True
             break
         #endif
-        if verbose or dit % 100 == 0:
+        if verbose or dit % 1000 == 0:
             # If not verbose, still print every so often.
             print('[%4d] f=%.2e\t|g|=%.2e\tlinesearch steps: %2d' % (dit, f, norm(g), lnsCnt), flush=True)
         #endif
@@ -136,7 +126,7 @@ def descend(funcNgrad, x, linesearch=True, heavy=False, stepsize=1, c=1e-4, rho=
     else:
         print("[NOK] No convergence")
     #endif
-    return x_values, f0_values, g0_values
+    return x, f0_values, g0_values
 
 if __name__ == '__main__':
     def fNg(x):

@@ -22,9 +22,13 @@ def classify(w, X, y, threshold=0.5):
     '''
     @returns: classification rate.
     '''
+    num_correct = 0
     y_prediction = []
     for i, email in enumerate(X):
-        y_prediction.append(1 if sigm(np.inner(w, email)) > threshold else -1)
+        classification = 1 if sigm(np.inner(w, email)) > threshold else -1
+        y_prediction.append(classification)
+        if classification == y[i]:
+            num_correct+=1
 
     y_prediction = np.array(y_prediction)
     return sum(y*y_prediction)/(2*len(X)) + 0.5
@@ -78,11 +82,11 @@ if __name__ == '__main__':
     tolX = 1e-2
 
     print('[INFO] Starting line search gradient descent (no g)')
-    lns_x0, lns_f0_values0, lns_g0_values0 = descend(fNgTrain, x0, linesearch=True, maxIterations=maxIts,verbose=False, tol=tol, tolX=tolX)
+    lns_x0, lns_f0_values0, lns_g0_values0 = descend(fNgTrain, x0, linesearch=True, heavy=True, maxIterations=maxIts,verbose=False, tol=tol, tolX=tolX)
     lsp0 = plt.semilogy(lns_f0_values0, range(len(lns_f0_values0)),label='linesearch (no g)')[0]
 
     print('[INFO] Starting line search gradient descent (with g)')
-    lns_x1, lns_f0_values1, lns_g0_values1 = descend(fNgTrain, x0, linesearch=True, maxIterations=maxIts,verbose=False, tol=tol, tolX=tolX, prox=prox2)
+    lns_x1, lns_f0_values1, lns_g0_values1 = descend(fNgTrain, x0, linesearch=False, heavy=True, maxIterations=maxIts,verbose=False, tol=tol, tolX=tolX)
     lsp1 = plt.semilogy(lns_f0_values1, range(len(lns_f0_values1)),label='linesearch (with g)')[0]
 
     for name, val in [['LINESEARCH 0', lns_x0[-1]], ['LINESEARCH 1', lns_x1[-1]]]:
